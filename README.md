@@ -2,7 +2,7 @@
 
 ImGuiを用いて聖剣伝説風のリングメニューを描画します.  
 
-
+![ImGuiRingMenu](./ImGuiRingMenu.gif)
 
 ## 組み込み方法について
 ImGuiRingMenu.cppとImGuiRingMenu.hをプロジェクトに追加してください。  
