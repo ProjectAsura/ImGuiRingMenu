@@ -27,9 +27,10 @@ enum AnimState
 //-----------------------------------------------------------------------------
 //      リングメニュー項目を描画します.
 //-----------------------------------------------------------------------------
-void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const ImVec2& pos, bool selected)
+void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const ImVec2& pos, float alpha, bool selected)
 {
     float s = 64.0f;    // アイコンサイズ.
+    uint8_t a = uint8_t(255 * alpha);
 
     // アイコンを描画.
     if (item.Icon != ImTextureID_Invalid)
@@ -44,13 +45,13 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const
         dl->AddRectFilled(
             ImVec2(pos.x - s * 0.5f, pos.y - s * 0.5f),
             ImVec2(pos.x + s * 0.5f, pos.y + s * 0.5f),
-            (selected ? IM_COL32(255, 255, 255, 255) : IM_COL32(204, 204, 204, 255)),
+            (selected ? IM_COL32(255, 255, 255, a) : IM_COL32(204, 204, 204, a)),
             2.0f);
         const char capital[2] = { item.Label.c_str()[0], '\0'};
         auto textSize = ImGui::CalcTextSize(capital);
         dl->AddText(
             ImVec2(pos.x - textSize.x * 0.5f, pos.y - textSize.y * 0.5f),
-            (selected ? IM_COL32(0, 0, 0, 255) : IM_COL32(255, 255, 255, 255)),
+            (selected ? IM_COL32(0, 0, 0, a) : IM_COL32(255, 255, 255, a)),
             capital);
     }
 
@@ -58,7 +59,7 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const
     auto textSize = ImGui::CalcTextSize(item.Label.c_str());
         dl->AddText(
             ImVec2(pos.x - textSize.x * 0.5f, pos.y + s * 0.6f),
-            (selected ? IM_COL32(255, 255, 0, 255) : IM_COL32(255, 255, 255, 255)),
+            (selected ? IM_COL32(255, 255, 0, a) : IM_COL32(255, 255, 255, a)),
             item.Label.c_str());
 }
 
@@ -107,12 +108,12 @@ void ImGuiRingMenu::Update(float deltaSec)
     // 開始アニメ.
     if (m_State == AnimIn)
     {
-        m_AnimProgress = ImClamp(m_AnimProgress + deltaSec * m_AnimSpeed, 0.0f, 1.0f);
+        m_AnimProgress = ImClamp(m_AnimProgress + deltaSec * m_Config.AnimSpeed, 0.0f, 1.0f);
     }
     // 終了アニメ.
     else if (m_State == AnimOut)
     {
-        m_AnimProgress = ImClamp(m_AnimProgress - deltaSec * m_AnimSpeed, 0.0f, 1.0f);
+        m_AnimProgress = ImClamp(m_AnimProgress - deltaSec * m_Config.AnimSpeed, 0.0f, 1.0f);
         // 終了判定.
         if (m_AnimProgress <= 1e-6f)
         {
@@ -122,7 +123,7 @@ void ImGuiRingMenu::Update(float deltaSec)
     }
 
     // 回転角を補間.
-    m_CurrentAngle = ImLerp(m_CurrentAngle, m_TargetAngle, deltaSec * m_AnimSpeed);
+    m_CurrentAngle = ImLerp(m_CurrentAngle, m_TargetAngle, deltaSec * m_Config.AnimSpeed);
  
     // 一定値以下になったら収束させる.
     if (fabsf(m_TargetAngle - m_CurrentAngle) <= 1e-6f)
@@ -136,6 +137,9 @@ void ImGuiRingMenu::Update(float deltaSec)
 //-----------------------------------------------------------------------------
 bool ImGuiRingMenu::Draw(int& selectedIndex)
 {
+    // いったん設定.
+    selectedIndex = m_SelectedId;
+
     // 項目数を取得.
     const int count = (int)m_Items.size();
     if (count == 0)
@@ -157,23 +161,22 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     float rotateStep = (IM_PI * 2.0f) / float(count);
 
     // メニュー開始.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.MenuStart)) && m_State == AnimNone)
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuStart)) && m_State == AnimNone)
     {
         m_State        = AnimIn;
         m_AnimProgress = 0.0f;
     }
     // メニュー終了.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.MenuEnd)) && m_State == AnimIn)
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuEnd)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
     }
     // メニュー決定.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.Confirmation)) && m_State == AnimIn)
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyConfirmation)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
-        selectedIndex  = m_SelectedId;
         result = true;
     }
 
@@ -182,13 +185,13 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
         return result;
 
     // 時計回りに回転.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.CwRotate)))
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyCwRotate)))
     {
         m_TargetAngle -= rotateStep;
         m_SelectedId++;
     }
     // 反時計周りに回転.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.CcwRotate)))
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyCcwRotate)))
     {
         m_TargetAngle += rotateStep;
         m_SelectedId--;
@@ -200,6 +203,9 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     else if (m_SelectedId < 0)
         m_SelectedId = count - 1;
 
+    // 補正済み値を設定.
+    selectedIndex = m_SelectedId;
+
     auto r = radius * m_AnimProgress;   // 描画半径.
     auto startAngle = -IM_PI * 0.5f;    // 開始角度.
     auto endAngle   =  IM_PI * 1.5f;    // 終了角度.
@@ -210,15 +216,14 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     // 各メニュー項目を描画.
     for(auto i=0; i<count; ++i)
     {
-        auto t = float(i) / float(count);
-        auto angle = startAngle + (endAngle - startAngle) * t;
-        angle += m_CurrentAngle;
+        auto t     = float(i) / float(count);
+        auto angle = startAngle + (endAngle - startAngle) * t + m_CurrentAngle;
 
         ImVec2 pos(center.x + cosf(angle) * r,
                    center.y + sinf(angle) * r);
 
         int index = i % count;
-        DrawRingMenuItem(dl, m_Items[index], pos, i == m_SelectedId);
+        DrawRingMenuItem(dl, m_Items[index], pos, m_AnimProgress, i == m_SelectedId);
     }
 
     // 選択されたら true を返す.
@@ -226,25 +231,13 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
 }
 
 //-----------------------------------------------------------------------------
-//      キーコンフィグを設定します.
+//      コンフィグを設定します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::SetKeyConfig(const KeyConfig& value)
-{ m_KeyConfig = value; }
+void ImGuiRingMenu::SetConfig(const Config& value)
+{ m_Config = value; }
 
 //-----------------------------------------------------------------------------
-//      キーコンフィグを取得します.
+//      コンフィグを取得します.
 //-----------------------------------------------------------------------------
-const ImGuiRingMenu::KeyConfig& ImGuiRingMenu::GetKeyConfig() const
-{ return m_KeyConfig; }
-
-//-----------------------------------------------------------------------------
-//      アニメーションスピードを設定します.
-//-----------------------------------------------------------------------------
-void ImGuiRingMenu::SetAnimationSpeed(float value)
-{ m_AnimSpeed = value; }
-
-//-----------------------------------------------------------------------------
-//      アニメーションスピードを取得します.
-//-----------------------------------------------------------------------------
-float ImGuiRingMenu::GetAnimationSpeed() const
-{ return m_AnimSpeed; }
+const ImGuiRingMenu::Config& ImGuiRingMenu::GetConfig() const
+{ return m_Config; }
