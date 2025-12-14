@@ -7,9 +7,9 @@
 //-----------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------
-#include "ImGuiRingMenu.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "ImGuiRingMenu.h"
 
 
 namespace {
@@ -32,9 +32,9 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const
     float s = 64.0f;    // アイコンサイズ.
 
     // アイコンを描画.
-    if (item.Icon)
+    if (item.Icon != ImTextureID_Invalid)
     {
-        dl->AddImage(item.icon,
+        dl->AddImage(item.Icon,
             ImVec2(pos.x - s * 0.5f, pos.y - s * 0.5f),
             ImVec2(pos.x + s * 0.5f, pos.y + s * 0.5f));
     }
@@ -59,7 +59,7 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const
         dl->AddText(
             ImVec2(pos.x - textSize.x * 0.5f, pos.y + s * 0.6f),
             (selected ? IM_COL32(255, 255, 0, 255) : IM_COL32(255, 255, 255, 255)),
-            item.label.c_str());
+            item.Label.c_str());
 }
 
 } // namespace
@@ -122,10 +122,10 @@ void ImGuiRingMenu::Update(float deltaSec)
     }
 
     // 回転角を補間.
-    m_CurrentAngle = ImLerp(m_CurrentAngle, m_TargetAngle, deltaSec * m_AnimSpeed * 0.5f);
+    m_CurrentAngle = ImLerp(m_CurrentAngle, m_TargetAngle, deltaSec * m_AnimSpeed);
  
     // 一定値以下になったら収束させる.
-    if (fabsf(m_TargetAngle - m_CurrentAngle) <= 1e-3f)
+    if (fabsf(m_TargetAngle - m_CurrentAngle) <= 1e-6f)
     {
         m_CurrentAngle = m_TargetAngle;
     }
@@ -145,29 +145,31 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
 
     // 中心位置を求める.
     auto displaySize = ImGui::GetIO().DisplaySize;
-    center = displaySize;
+    auto center = displaySize;
     center.x *= 0.5f;
     center.y *= 0.5f;
 
     // 縦・横の小さい方を半径として採用する.
-    radius = (center.y < center.x) ? center.y : center.x;
+    auto radius = (center.y < center.x) ? center.y : center.x;
     radius *= 0.5f;
 
     // 1項目の回転量.
     float rotateStep = (IM_PI * 2.0f) / float(count);
 
-    // キー判定.
-    if (ImGui::IsKeyPresssed(m_KeyConfig.MenuStart))
+    // メニュー開始.
+    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.MenuStart)) && m_State == AnimNone)
     {
         m_State        = AnimIn;
         m_AnimProgress = 0.0f;
     }
-    if (ImGui::IsKeyPresssed(m_KeyConfig.MenuEnd))
+    // メニュー終了.
+    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.MenuEnd)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
     }
-    if (ImGui::IsKeyPresssed(m_KeyConfig.Confirmation))
+    // メニュー決定.
+    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.Confirmation)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
@@ -180,13 +182,13 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
         return result;
 
     // 時計回りに回転.
-    if (ImGui::IsKeyPressed(m_KeyConfig.CwRotate))
+    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.CwRotate)))
     {
         m_TargetAngle -= rotateStep;
         m_SelectedId++;
     }
     // 反時計周りに回転.
-    if (ImGui::IsKeyPresssed(m_KeyConfig.CcwRotate))
+    if (ImGui::IsKeyPressed(ImGuiKey(m_KeyConfig.CcwRotate)))
     {
         m_TargetAngle += rotateStep;
         m_SelectedId--;
@@ -222,3 +224,27 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     // 選択されたら true を返す.
     return result;
 }
+
+//-----------------------------------------------------------------------------
+//      キーコンフィグを設定します.
+//-----------------------------------------------------------------------------
+void ImGuiRingMenu::SetKeyConfig(const KeyConfig& value)
+{ m_KeyConfig = value; }
+
+//-----------------------------------------------------------------------------
+//      キーコンフィグを取得します.
+//-----------------------------------------------------------------------------
+const ImGuiRingMenu::KeyConfig& ImGuiRingMenu::GetKeyConfig() const
+{ return m_KeyConfig; }
+
+//-----------------------------------------------------------------------------
+//      アニメーションスピードを設定します.
+//-----------------------------------------------------------------------------
+void ImGuiRingMenu::SetAnimationSpeed(float value)
+{ m_AnimSpeed = value; }
+
+//-----------------------------------------------------------------------------
+//      アニメーションスピードを取得します.
+//-----------------------------------------------------------------------------
+float ImGuiRingMenu::GetAnimationSpeed() const
+{ return m_AnimSpeed; }
