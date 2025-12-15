@@ -27,38 +27,44 @@ enum AnimState
 //-----------------------------------------------------------------------------
 //      リングメニュー項目を描画します.
 //-----------------------------------------------------------------------------
-void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, const ImVec2& pos, float alpha, bool selected)
+void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float iconSize, const ImVec2& pos, float alpha, bool selected)
 {
-    float s = 64.0f;    // アイコンサイズ.
+    auto halfSize = iconSize * 0.5f;
     uint8_t a = uint8_t(255 * alpha);
 
     // アイコンを描画.
     if (item.Icon != ImTextureID_Invalid)
     {
         dl->AddImage(item.Icon,
-            ImVec2(pos.x - s * 0.5f, pos.y - s * 0.5f),
-            ImVec2(pos.x + s * 0.5f, pos.y + s * 0.5f));
+            ImVec2(pos.x - halfSize, pos.y - halfSize),
+            ImVec2(pos.x + halfSize, pos.y + halfSize));
     }
     // 頭文字を描画.
     else
     {
         dl->AddRectFilled(
-            ImVec2(pos.x - s * 0.5f, pos.y - s * 0.5f),
-            ImVec2(pos.x + s * 0.5f, pos.y + s * 0.5f),
-            (selected ? IM_COL32(255, 255, 255, a) : IM_COL32(204, 204, 204, a)),
+            ImVec2(pos.x - halfSize, pos.y - halfSize),
+            ImVec2(pos.x + halfSize, pos.y + halfSize),
+            (selected ? IM_COL32(255, 255, 255, a) : IM_COL32(0, 0, 0, a)),
             2.0f);
         const char capital[2] = { item.Label.c_str()[0], '\0'};
         auto textSize = ImGui::CalcTextSize(capital);
+        auto textScale = (halfSize / dl->_Data->FontSize);
         dl->AddText(
-            ImVec2(pos.x - textSize.x * 0.5f, pos.y - textSize.y * 0.5f),
+            dl->_Data->Font,
+            halfSize,
+            ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y - textSize.y * 0.5f * textScale),
             (selected ? IM_COL32(0, 0, 0, a) : IM_COL32(255, 255, 255, a)),
             capital);
     }
 
     // ラベル
-    auto textSize = ImGui::CalcTextSize(item.Label.c_str());
+    auto textSize  = ImGui::CalcTextSize(item.Label.c_str());
+    auto textScale = (iconSize * 0.25 / dl->_Data->FontSize);
         dl->AddText(
-            ImVec2(pos.x - textSize.x * 0.5f, pos.y + s * 0.6f),
+            dl->_Data->Font,
+            iconSize * 0.25f,
+            ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y + iconSize * 0.6f),
             (selected ? IM_COL32(255, 255, 0, a) : IM_COL32(255, 255, 255, a)),
             item.Label.c_str());
 }
@@ -223,8 +229,64 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
                    center.y + sinf(angle) * r);
 
         int index = i % count;
-        DrawRingMenuItem(dl, m_Items[index], pos, m_AnimProgress, i == m_SelectedId);
+        DrawRingMenuItem(dl, m_Items[index], m_Config.IconSize, pos, m_AnimProgress, i == m_SelectedId);
     }
+
+    auto iconSize = 64.0f;
+    auto halfSize = iconSize * 0.5f;
+    auto lineLen  = iconSize * 0.25f;
+    auto lineCol  = IM_COL32(0, 0, 255, 255);
+    auto thickness = 4.0f;
+
+    // 枠描画
+
+    // 左上.
+    dl->AddLine(
+        ImVec2(center.x - halfSize - thickness,          center.y - r - halfSize - thickness),
+        ImVec2(center.x - halfSize - thickness+ lineLen, center.y - r - halfSize - thickness),
+        lineCol,
+        thickness);
+    dl->AddLine(
+        ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness),
+        ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness + lineLen),
+        lineCol,
+        thickness);
+
+    // 右上.
+    dl->AddLine(
+        ImVec2(center.x + halfSize + thickness - 1,           center.y - r - halfSize - thickness),
+        ImVec2(center.x + halfSize + thickness - 1 - lineLen, center.y - r - halfSize - thickness),
+        lineCol,
+        thickness);
+    dl->AddLine(
+        ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness),
+        ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness + lineLen),
+        lineCol,
+        thickness);
+
+    // 左下.
+    dl->AddLine(
+        ImVec2(center.x - halfSize - thickness,             center.y - r + halfSize + thickness - 1),
+        ImVec2(center.x - halfSize - thickness + lineLen,   center.y - r + halfSize + thickness - 1),
+        lineCol,
+        thickness);
+    dl->AddLine(
+        ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1),
+        ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1 - lineLen),
+        lineCol,
+        thickness);
+
+    // 右下.
+    dl->AddLine(
+        ImVec2(center.x + halfSize + thickness - 1,             center.y - r + halfSize + thickness - 1),
+        ImVec2(center.x + halfSize + thickness - 1 - lineLen,   center.y - r + halfSize + thickness - 1),
+        lineCol,
+        thickness);
+    dl->AddLine(
+        ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1),
+        ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1 - lineLen),
+        lineCol,
+        thickness);
 
     // 選択されたら true を返す.
     return result;
