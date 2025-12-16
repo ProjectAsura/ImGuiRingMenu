@@ -60,10 +60,10 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float
 
     // ラベル
     auto textSize  = ImGui::CalcTextSize(item.Label.c_str());
-    auto textScale = (iconSize * 0.25 / dl->_Data->FontSize);
+    auto textScale = (iconSize * 0.25f / dl->_Data->FontSize);
         dl->AddText(
             dl->_Data->Font,
-            iconSize * 0.25f,
+            halfSize * 0.5f,
             ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y + iconSize * 0.6f),
             (selected ? IM_COL32(255, 255, 0, a) : IM_COL32(255, 255, 255, a)),
             item.Label.c_str());
@@ -232,9 +232,8 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
         DrawRingMenuItem(dl, m_Items[index], m_Config.IconSize, pos, m_AnimProgress, i == m_SelectedId);
     }
 
-    auto iconSize = 64.0f;
-    auto halfSize = iconSize * 0.5f;
-    auto lineLen  = iconSize * 0.25f;
+    auto halfSize = m_Config.IconSize * 0.5f;
+    auto lineLen  = halfSize * 0.5f;
     auto lineCol  = IM_COL32(0, 0, 255, 255);
     auto thickness = 4.0f;
 
