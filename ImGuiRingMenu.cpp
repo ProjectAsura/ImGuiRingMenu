@@ -213,8 +213,8 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     selectedIndex = m_SelectedId;
 
     auto r = ImLerp(radius * 3.0f, radius, m_AnimProgress);   // 描画半径.
-    auto startAngle = -IM_PI * 0.5f + (1.0f - m_AnimProgress) * IM_PI;    // 開始角度.
-    auto endAngle   =  IM_PI * 1.5f + (1.0f - m_AnimProgress) * IM_PI;    // 終了角度.
+    auto startAngle = -IM_PI * 0.5f - (1.0f - m_AnimProgress) * IM_PI;    // 開始角度.
+    auto endAngle   =  IM_PI * 1.5f - (1.0f - m_AnimProgress) * IM_PI;    // 終了角度.
 
     // 背景の描画リストを取得.
     auto dl = ImGui::GetBackgroundDrawList();
