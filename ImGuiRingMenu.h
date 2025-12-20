@@ -48,7 +48,7 @@ public:
         int         KeyConfirmation     = 525;                  //!< 決定キー.
         int         KeyCwRotate         = 514;                  //!< 時計回り回転キー.
         int         KeyCcwRotate        = 513;                  //!< 反時計周り回転キー.
-        float       AnimSpeed           = 8.0f;                 //!< アニメーションスピード.
+        float       AnimSpeed           = 6.0f;                 //!< アニメーションスピード.
         float       IconSize            = 64.0f;                //!< アイコンサイズ.
     };
 
