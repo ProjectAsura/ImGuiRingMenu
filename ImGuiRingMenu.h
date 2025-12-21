@@ -43,11 +43,12 @@ public:
     ///////////////////////////////////////////////////////////////////////////
     struct Config
     {
-        int         KeyMenuStart        = 524;                  //!< メニュー開始キー.
-        int         KeyMenuEnd          = 526;                  //!< メニュー終了キー.
-        int         KeyConfirmation     = 525;                  //!< 決定キー.
-        int         KeyCwRotate         = 514;                  //!< 時計回り回転キー.
-        int         KeyCcwRotate        = 513;                  //!< 反時計周り回転キー.
+        int         KeyMenuStart        = 524;                  //!< メニュー開始キー   (Default: ImGuiKey_Space).
+        int         KeyMenuEnd          = 526;                  //!< メニュー終了キー   (Default: ImGuikey_Espace).
+        int         KeyConfirmation     = 525;                  //!< 決定キー           (Default: ImGuiKey_Enter).
+        int         KeyCwRotate         = 514;                  //!< 時計回り回転キー   (Default: ImGuiKey_Right).
+        int         KeyCcwRotate        = 513;                  //!< 反時計周り回転キー (Default: ImGuiKey_Left).
+
         float       AnimSpeed           = 6.0f;                 //!< アニメーションスピード.
         float       IconSize            = 64.0f;                //!< アイコンサイズ.
     };

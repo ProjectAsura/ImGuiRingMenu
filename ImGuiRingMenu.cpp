@@ -173,13 +173,13 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
         m_AnimProgress = 0.0f;
     }
     // メニュー終了.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuEnd)) && m_State == AnimIn)
+    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuEnd)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
     }
     // メニュー決定.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyConfirmation)) && m_State == AnimIn)
+    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyConfirmation)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
@@ -212,7 +212,7 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     // 補正済み値を設定.
     selectedIndex = m_SelectedId;
 
-    auto r = ImLerp(radius * 3.0f, radius, m_AnimProgress);   // 描画半径.
+    auto r = ImLerp(radius * 4.0f, radius, m_AnimProgress);   // 描画半径.
     auto startAngle = -IM_PI * 0.5f - (1.0f - m_AnimProgress) * IM_PI;    // 開始角度.
     auto endAngle   =  IM_PI * 1.5f - (1.0f - m_AnimProgress) * IM_PI;    // 終了角度.
 
@@ -237,55 +237,56 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     auto lineCol  = IM_COL32(0, 0, 255, 255);
     auto thickness = 4.0f;
 
-    // 枠描画
+    // 選択枠描画
+    {
+        // 左上.
+        dl->AddLine(
+            ImVec2(center.x - halfSize - thickness,          center.y - r - halfSize - thickness),
+            ImVec2(center.x - halfSize - thickness+ lineLen, center.y - r - halfSize - thickness),
+            lineCol,
+            thickness);
+        dl->AddLine(
+            ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness),
+            ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness + lineLen),
+            lineCol,
+            thickness);
 
-    // 左上.
-    dl->AddLine(
-        ImVec2(center.x - halfSize - thickness,          center.y - r - halfSize - thickness),
-        ImVec2(center.x - halfSize - thickness+ lineLen, center.y - r - halfSize - thickness),
-        lineCol,
-        thickness);
-    dl->AddLine(
-        ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness),
-        ImVec2(center.x - halfSize - thickness, center.y - r - halfSize - thickness + lineLen),
-        lineCol,
-        thickness);
+        // 右上.
+        dl->AddLine(
+            ImVec2(center.x + halfSize + thickness - 1,           center.y - r - halfSize - thickness),
+            ImVec2(center.x + halfSize + thickness - 1 - lineLen, center.y - r - halfSize - thickness),
+            lineCol,
+            thickness);
+        dl->AddLine(
+            ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness),
+            ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness + lineLen),
+            lineCol,
+            thickness);
 
-    // 右上.
-    dl->AddLine(
-        ImVec2(center.x + halfSize + thickness - 1,           center.y - r - halfSize - thickness),
-        ImVec2(center.x + halfSize + thickness - 1 - lineLen, center.y - r - halfSize - thickness),
-        lineCol,
-        thickness);
-    dl->AddLine(
-        ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness),
-        ImVec2(center.x + halfSize + thickness - 1, center.y - r - halfSize - thickness + lineLen),
-        lineCol,
-        thickness);
+        // 左下.
+        dl->AddLine(
+            ImVec2(center.x - halfSize - thickness,             center.y - r + halfSize + thickness - 1),
+            ImVec2(center.x - halfSize - thickness + lineLen,   center.y - r + halfSize + thickness - 1),
+            lineCol,
+            thickness);
+        dl->AddLine(
+            ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1),
+            ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1 - lineLen),
+            lineCol,
+            thickness);
 
-    // 左下.
-    dl->AddLine(
-        ImVec2(center.x - halfSize - thickness,             center.y - r + halfSize + thickness - 1),
-        ImVec2(center.x - halfSize - thickness + lineLen,   center.y - r + halfSize + thickness - 1),
-        lineCol,
-        thickness);
-    dl->AddLine(
-        ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1),
-        ImVec2(center.x - halfSize - thickness, center.y - r + halfSize + thickness - 1 - lineLen),
-        lineCol,
-        thickness);
-
-    // 右下.
-    dl->AddLine(
-        ImVec2(center.x + halfSize + thickness - 1,             center.y - r + halfSize + thickness - 1),
-        ImVec2(center.x + halfSize + thickness - 1 - lineLen,   center.y - r + halfSize + thickness - 1),
-        lineCol,
-        thickness);
-    dl->AddLine(
-        ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1),
-        ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1 - lineLen),
-        lineCol,
-        thickness);
+        // 右下.
+        dl->AddLine(
+            ImVec2(center.x + halfSize + thickness - 1,             center.y - r + halfSize + thickness - 1),
+            ImVec2(center.x + halfSize + thickness - 1 - lineLen,   center.y - r + halfSize + thickness - 1),
+            lineCol,
+            thickness);
+        dl->AddLine(
+            ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1),
+            ImVec2(center.x + halfSize + thickness - 1, center.y - r + halfSize + thickness - 1 - lineLen),
+            lineCol,
+            thickness);
+    }
 
     // 選択されたら true を返す.
     return result;
