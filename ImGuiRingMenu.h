@@ -17,6 +17,14 @@
 typedef uint64_t ImTextureID;
 #endif//ImTextureID
 
+#ifndef RING_API
+#define RING_API
+#endif//RING_API
+
+#ifndef RING_APIENTRY
+#define RING_APIENTRY __stdcall
+#endif//RING_APIENTRY
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ImGuiRingMenu class
@@ -32,7 +40,7 @@ public:
     ///////////////////////////////////////////////////////////////////////////
     // MenuItem structure
     ///////////////////////////////////////////////////////////////////////////
-    struct MenuItem
+    struct RING_API MenuItem
     {
         ImTextureID     Icon;   //!< メニューアイコン.
         std::string     Label;  //!< 表示文字列.
@@ -41,16 +49,19 @@ public:
     ///////////////////////////////////////////////////////////////////////////
     // Config structure
     ///////////////////////////////////////////////////////////////////////////
-    struct Config
+    struct RING_API Config
     {
-        int         KeyMenuStart        = 524;                  //!< メニュー開始キー   (Default: ImGuiKey_Space).
-        int         KeyMenuEnd          = 526;                  //!< メニュー終了キー   (Default: ImGuikey_Espace).
-        int         KeyConfirmation     = 525;                  //!< 決定キー           (Default: ImGuiKey_Enter).
-        int         KeyCwRotate         = 514;                  //!< 時計回り回転キー   (Default: ImGuiKey_Right).
-        int         KeyCcwRotate        = 513;                  //!< 反時計周り回転キー (Default: ImGuiKey_Left).
+        int KeyMenuOpen     = 519;/* ImGuiKey_Home  */  //!< メニュー開始キー.
+        int KeyMenuClose    = 519;/* ImGuiKey_Home  */  //!< メニュー終了キー.
+        int KeyMenuSelect   = 525;/* ImGuiKey_Enter */  //!< 決定キー.
+        int KeyCwRotate     = 514;/* ImGuiKey_Right */  //!< 時計回り回転キー.
+        int KeyCcwRotate    = 513;/* ImGuiKey_Left  */  //!< 反時計周り回転キー.
 
-        float       AnimSpeed           = 6.0f;                 //!< アニメーションスピード.
-        float       IconSize            = 64.0f;                //!< アイコンサイズ.
+        float       AnimSpeed           = 6.0f;         //!< アニメーションスピード.
+        float       IconSize            = 64.0f;        //!< アイコンサイズ.
+        uint32_t    ColorBezel          = 0xFFFF0000;   //!< 選択枠カラー.
+        uint32_t    ColorSelectedLabel  = 0x0000FFFF;   //!< 選択中カラー.
+        uint32_t    ColorDefaultLabel   = 0x00FFFFFF;   //!< ラベルカラー.
     };
 
     //=========================================================================
@@ -65,38 +76,38 @@ public:
     //-------------------------------------------------------------------------
     //! @brief      コンストラクタです.
     //-------------------------------------------------------------------------
-    ImGuiRingMenu();
+    RING_API RING_APIENTRY ImGuiRingMenu();
 
     //-------------------------------------------------------------------------
     //! @brief      デストラクタです.
     //-------------------------------------------------------------------------
-    ~ImGuiRingMenu();
+    RING_API RING_APIENTRY ~ImGuiRingMenu();
 
     //-------------------------------------------------------------------------
     //! @brief      指定されたメニュー項目を追加します.
     //! 
     //! @param[in]      item        追加する項目.
     //-------------------------------------------------------------------------
-    void Add(const MenuItem& item);
+    RING_API void RING_APIENTRY Add(const MenuItem& item);
 
     //-------------------------------------------------------------------------
     //! @brief      指定されたメニュー項目を削除します.
     //! 
     //! @param[in]      index       削除する項目番号.
     //-------------------------------------------------------------------------
-    void Remove(uint32_t index);
+    RING_API void RING_APIENTRY Remove(uint32_t index);
 
     //-------------------------------------------------------------------------
     //! @brief      メニュー項目を全削除します.
     //-------------------------------------------------------------------------
-    void Clear();
+    RING_API void RING_APIENTRY Clear();
 
     //-------------------------------------------------------------------------
     //! @brief      アニメーション更新を行います.
     //! 
     //! @param[in]      deltaSec        前フレームからの差分時間(秒単位).
     //-------------------------------------------------------------------------
-    void Update(float deltaSec);
+    RING_API void RING_APIENTRY Update(float deltaSec);
 
     //-------------------------------------------------------------------------
     //! @brief      描画処理を行います.
@@ -104,35 +115,34 @@ public:
     //! @param[in,out]  selectedIndex   選択されているメニュー番号.
     //! @return     メニューが選択された true を返却します.
     //-------------------------------------------------------------------------
-    bool Draw(int& selectedIndex);
+    RING_API bool RING_APIENTRY Draw(int& selectedIndex);
 
     //-------------------------------------------------------------------------
     //! @brief      コンフィグを設定します.
     //! 
     //! @param[in]      value       設定する値.
     //-------------------------------------------------------------------------
-    void SetConfig(const Config& value);
+    RING_API void RING_APIENTRY SetConfig(const Config& value);
 
     //-------------------------------------------------------------------------
     //! @brief      コンフィグを取得します.
     //! 
     //! @return     コンフィグを返却します.
     //-------------------------------------------------------------------------
-    const Config& GetConfig() const;
-
+    RING_API const Config& RING_APIENTRY GetConfig() const;
 
 private:
     //=========================================================================
     // private variables.
     //=========================================================================
-    std::vector<MenuItem>   m_Items;                    //!< メニューアイテムリスト.
-    int                     m_SelectedId    = 0;        //!< 選択されている番号.
-    float                   m_CurrentAngle  = 0.0f;     //!< 現在の回転角.
-    float                   m_TargetAngle   = 0.0f;     //!< 目標とする回転角.
-    float                   m_AnimProgress  = 0.0f;     //!< アニメーション進捗率[0, 1].
-    float                   m_AnimSpeed     = 8.0f;     //!< アニメーションスピード.
-    uint8_t                 m_State         = 0;        //!< アニメーションステート.
-    Config                  m_Config        = {};       //!< コンフィグ.
+    std::vector<MenuItem> m_Items;      //!< メニューアイテムリスト.
+
+    int     m_SelectedId    = 0;        //!< 選択されている番号.
+    float   m_CurrentAngle  = 0.0f;     //!< 現在の回転角.
+    float   m_TargetAngle   = 0.0f;     //!< 目標とする回転角.
+    float   m_AnimProgress  = 0.0f;     //!< アニメーション進捗率[0, 1].
+    uint8_t m_State         = 0;        //!< アニメーションステート.
+    Config  m_Config        = {};       //!< コンフィグ.
 
     //=========================================================================
     // private methods.

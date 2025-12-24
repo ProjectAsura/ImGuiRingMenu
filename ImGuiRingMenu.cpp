@@ -27,9 +27,17 @@ enum AnimState
 //-----------------------------------------------------------------------------
 //      リングメニュー項目を描画します.
 //-----------------------------------------------------------------------------
-void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float iconSize, const ImVec2& pos, float alpha, bool selected)
+void DrawRingMenuItem
+(
+    ImDrawList*                     dl,
+    const ImGuiRingMenu::MenuItem&  item,
+    const ImGuiRingMenu::Config&    config,
+    const ImVec2&                   pos,
+    float                           alpha,
+    bool                            selected
+)
 {
-    auto halfSize = iconSize * 0.5f;
+    auto halfSize = config.IconSize * 0.5f;
     uint8_t a = uint8_t(255 * alpha);
 
     // アイコンを描画.
@@ -42,10 +50,13 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float
     // 頭文字を描画.
     else
     {
+        auto selectedIcon = config.ColorDefaultLabel | (a << 24);
+        auto defaultIcon  = (~config.ColorDefaultLabel) & 0x00FFFFFF | (a << 24);
+
         dl->AddRectFilled(
             ImVec2(pos.x - halfSize, pos.y - halfSize),
             ImVec2(pos.x + halfSize, pos.y + halfSize),
-            (selected ? IM_COL32(255, 255, 255, a) : IM_COL32(0, 0, 0, a)),
+            (selected ? selectedIcon : defaultIcon),
             2.0f);
         const char capital[2] = { item.Label.c_str()[0], '\0'};
         auto textSize = ImGui::CalcTextSize(capital);
@@ -54,19 +65,23 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float
             dl->_Data->Font,
             halfSize,
             ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y - textSize.y * 0.5f * textScale),
-            (selected ? IM_COL32(0, 0, 0, a) : IM_COL32(255, 255, 255, a)),
+            (selected ? defaultIcon : selectedIcon),
             capital);
     }
 
     // ラベル
     auto textSize  = ImGui::CalcTextSize(item.Label.c_str());
-    auto textScale = (iconSize * 0.25f / dl->_Data->FontSize);
-        dl->AddText(
-            dl->_Data->Font,
-            halfSize * 0.5f,
-            ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y + iconSize * 0.6f),
-            (selected ? IM_COL32(255, 255, 0, a) : IM_COL32(255, 255, 255, a)),
-            item.Label.c_str());
+    auto textScale = (halfSize * 0.5f / dl->_Data->FontSize);
+
+    auto selectedLabel = config.ColorSelectedLabel | (a << 24);
+    auto defaultLabel  = config.ColorDefaultLabel  | (a << 24);
+
+    dl->AddText(
+        dl->_Data->Font,
+        halfSize * 0.5f,
+        ImVec2(pos.x - textSize.x * 0.5f * textScale, pos.y + config.IconSize * 0.6f),
+        (selected ? selectedLabel : defaultLabel),
+        item.Label.c_str());
 }
 
 } // namespace
@@ -79,37 +94,37 @@ void DrawRingMenuItem(ImDrawList* dl, const ImGuiRingMenu::MenuItem& item, float
 //-----------------------------------------------------------------------------
 //      コンストラクタです.
 //-----------------------------------------------------------------------------
-ImGuiRingMenu::ImGuiRingMenu()
+RING_APIENTRY ImGuiRingMenu::ImGuiRingMenu()
 { /* DO_NOTHING */ }
 
 //-----------------------------------------------------------------------------
 //      デストラクタです.
 //-----------------------------------------------------------------------------
-ImGuiRingMenu::~ImGuiRingMenu()
+RING_APIENTRY ImGuiRingMenu::~ImGuiRingMenu()
 { Clear(); }
 
 //-----------------------------------------------------------------------------
 //      指定されたメニュー項目を追加します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::Add(const MenuItem& item)
+void RING_APIENTRY ImGuiRingMenu::Add(const MenuItem& item)
 { m_Items.push_back(item); }
 
 //-----------------------------------------------------------------------------
 //      指定されたメニュー項目を削除します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::Remove(uint32_t index)
+void RING_APIENTRY ImGuiRingMenu::Remove(uint32_t index)
 { m_Items.erase(m_Items.begin() + index); }
 
 //-----------------------------------------------------------------------------
 //      メニュー項目を全削除します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::Clear()
+void RING_APIENTRY ImGuiRingMenu::Clear()
 { m_Items.clear(); }
 
 //-----------------------------------------------------------------------------
 //      アニメーションを更新します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::Update(float deltaSec)
+void RING_APIENTRY ImGuiRingMenu::Update(float deltaSec)
 {
     // 開始アニメ.
     if (m_State == AnimIn)
@@ -141,7 +156,7 @@ void ImGuiRingMenu::Update(float deltaSec)
 //-----------------------------------------------------------------------------
 //      描画処理を行います.
 //-----------------------------------------------------------------------------
-bool ImGuiRingMenu::Draw(int& selectedIndex)
+bool RING_APIENTRY ImGuiRingMenu::Draw(int& selectedIndex)
 {
     // いったん設定.
     selectedIndex = m_SelectedId;
@@ -167,19 +182,19 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
     float rotateStep = (IM_PI * 2.0f) / float(count);
 
     // メニュー開始.
-    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuStart)) && m_State == AnimNone)
+    if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuOpen)) && m_State == AnimNone)
     {
         m_State        = AnimIn;
         m_AnimProgress = 0.0f;
     }
     // メニュー終了.
-    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuEnd)) && m_State == AnimIn)
+    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuClose)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
     }
     // メニュー決定.
-    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyConfirmation)) && m_State == AnimIn)
+    else if (ImGui::IsKeyPressed(ImGuiKey(m_Config.KeyMenuSelect)) && m_State == AnimIn)
     {
         m_State        = AnimOut;
         m_AnimProgress = 1.0f;
@@ -229,12 +244,12 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
                    center.y + sinf(angle) * r);
 
         int index = i % count;
-        DrawRingMenuItem(dl, m_Items[index], m_Config.IconSize, pos, m_AnimProgress, i == m_SelectedId);
+        DrawRingMenuItem(dl, m_Items[index], m_Config, pos, m_AnimProgress, i == m_SelectedId);
     }
 
     auto halfSize = m_Config.IconSize * 0.5f;
     auto lineLen  = halfSize * 0.5f;
-    auto lineCol  = IM_COL32(0, 0, 255, 255);
+    auto lineCol  = m_Config.ColorBezel;
     auto thickness = 4.0f;
 
     // 選択枠描画
@@ -295,11 +310,11 @@ bool ImGuiRingMenu::Draw(int& selectedIndex)
 //-----------------------------------------------------------------------------
 //      コンフィグを設定します.
 //-----------------------------------------------------------------------------
-void ImGuiRingMenu::SetConfig(const Config& value)
+void RING_APIENTRY ImGuiRingMenu::SetConfig(const Config& value)
 { m_Config = value; }
 
 //-----------------------------------------------------------------------------
 //      コンフィグを取得します.
 //-----------------------------------------------------------------------------
-const ImGuiRingMenu::Config& ImGuiRingMenu::GetConfig() const
+const ImGuiRingMenu::Config& RING_APIENTRY ImGuiRingMenu::GetConfig() const
 { return m_Config; }
